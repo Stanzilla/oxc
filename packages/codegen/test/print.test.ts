@@ -107,6 +107,26 @@ function checkCases(cases: Case[]): void {
 
 // --- Tests ----------------------------------------------------------------------------------
 
+describe("starting indent level", () => {
+  const ast = e(id("x"));
+
+  test("indents from a valid level", () => {
+    expect(printSync(ast, { startingIndentLevel: 1 })).toBe("\tx;\n");
+  });
+
+  test.each([
+    ["infinity", Infinity],
+    ["negative infinity", -Infinity],
+    ["not a number", NaN],
+    ["fraction", 0.5],
+    ["negative", -1],
+  ])("rejects %s", (_name, startingIndentLevel) => {
+    expect(() => printSync(ast, { startingIndentLevel })).toThrow(
+      "`startingIndentLevel` must be a non-negative safe integer",
+    );
+  });
+});
+
 // A numeric literal followed by `.` needs a space when the number is plain digits, because
 // `0.toExponential()` would lex the `.` as part of the number. This is the `needSpaceBeforeDot`
 // path, and every case below is unreachable from a parsed fixture in at least one respect.

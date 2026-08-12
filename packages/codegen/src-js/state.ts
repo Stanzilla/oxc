@@ -85,8 +85,12 @@ export class State {
   constructor(options: Options) {
     this.output = "";
 
-    let indentLevel = options.startingIndentLevel;
-    if (typeof indentLevel !== "number") indentLevel = 0;
+    let { startingIndentLevel: indentLevel } = options;
+    if (indentLevel === undefined) {
+      indentLevel = 0;
+    } else if (!Number.isSafeInteger(indentLevel) || indentLevel < 0) {
+      throw new RangeError("`startingIndentLevel` must be a non-negative safe integer");
+    }
     this.indentLevel = indentLevel;
 
     // The `indent` option is validated here, not in the printer, and changing of it discards
