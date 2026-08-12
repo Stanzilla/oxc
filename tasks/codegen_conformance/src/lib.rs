@@ -47,14 +47,18 @@ pub struct Options {
 /// Comments are not printed. `oxc-codegen` does not print comments, and the ESTree AST the JS side
 /// works from carries no comment data anyway.
 #[napi]
-pub fn codegen(filename: String, source_text: String, options: Option<Options>) -> Option<String> {
+pub fn codegen(
+    filename: String,
+    source_text: String,
+    options: Option<Options>,
+) -> napi::Result<Option<String>> {
     let options =
         options.unwrap_or(Options { lang: None, source_type: None, preserve_parens: None });
 
     // Oxc should never panic, but a panic in a Node addon aborts the process, which would throw
-    // away a whole conformance run over ~58,000 fixtures. Contain it instead - the fixture is
-    // reported as unprintable, and the run continues.
-    catch_unwind(AssertUnwindSafe(move || {
+    // away the whole conformance run. Contain it, surfacing it as a JS error. `null` is reserved
+    // for source text which could not be parsed cleanly and the JS side skips.
+    catch_unwind(AssertUnwindSafe(|| {
         codegen_impl(
             &filename,
             &source_text,
@@ -63,7 +67,7 @@ pub fn codegen(filename: String, source_text: String, options: Option<Options>) 
             options.preserve_parens.unwrap_or(false),
         )
     }))
-    .unwrap_or(None)
+    .map_err(|_| napi::Error::from_reason(format!("Oxc code generator panicked for {filename}")))
 }
 
 fn codegen_impl(
